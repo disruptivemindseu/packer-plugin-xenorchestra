@@ -3,9 +3,10 @@ package xenorchestra
 import (
 	"context"
 	"fmt"
-	"strings"
+	"net"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
@@ -39,17 +40,15 @@ func (s *StepWaitForIP) Run(ctx context.Context, state multistep.StateBag) multi
 			ui.Error("Timeout waiting for VM IP address")
 			return multistep.ActionHalt
 		case <-ticker.C:
-			vm, err := client.GetVM(vmID.(string))
+			vm, err := client.VM().GetByID(ctx, vmID.(uuid.UUID))
 			if err != nil {
 				ui.Say(fmt.Sprintf("Error getting VM status: %v (retrying...)", err))
 				continue
 			}
 
-			// Look for IPv4 address
-			ipv4 := extractIPv4(vm.Addresses)
-			if ipv4 != "" {
-				ui.Say(fmt.Sprintf("VM got IP address: %s", ipv4))
-				state.Put("vm_ip", ipv4)
+			if ip := net.ParseIP(vm.MainIpAddress); ip.To4() != nil {
+				ui.Say(fmt.Sprintf("VM got IP address: %s", vm.MainIpAddress))
+				state.Put("vm_ip", vm.MainIpAddress)
 				return multistep.ActionContinue
 			}
 
@@ -60,14 +59,4 @@ func (s *StepWaitForIP) Run(ctx context.Context, state multistep.StateBag) multi
 
 func (s *StepWaitForIP) Cleanup(state multistep.StateBag) {
 	// No cleanup needed
-}
-
-func extractIPv4(addresses map[string]string) string {
-	// Look for keys like "0/ipv4/0", "0/ipv4/1", etc.
-	for key, value := range addresses {
-		if strings.Contains(key, "/ipv4/") {
-			return value
-		}
-	}
-	return ""
 }
