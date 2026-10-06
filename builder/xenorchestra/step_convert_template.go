@@ -14,7 +14,7 @@ type StepConvertTemplate struct{}
 
 func (s *StepConvertTemplate) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
-	vmID := state.Get("vm_id").(string)
+	vmID := state.Get("vm_id")
 
 	ui.Say(fmt.Sprintf("Build complete. VM %s is ready.", vmID))
 	ui.Say("Note: XO does not expose a 'set as template' endpoint. Convert the VM to a template manually via the Xen Orchestra UI.")

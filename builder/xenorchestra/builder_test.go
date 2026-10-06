@@ -119,49 +119,8 @@ func TestNewClient(t *testing.T) {
 	if client == nil {
 		t.Fatal("NewClient returned nil client")
 	}
-
-	if client.endpoint != endpoint {
-		t.Errorf("endpoint mismatch: expected %s, got %s", endpoint, client.endpoint)
-	}
-
-	if client.token != token {
-		t.Errorf("token mismatch: expected %s, got %s", token, client.token)
-	}
-
-	if client.http == nil {
-		t.Fatal("http client is nil")
-	}
-
-	if client.http.Jar == nil {
-		t.Fatal("cookie jar is nil")
-	}
 }
 
-func TestVMStructFields(t *testing.T) {
-	vm := &VM{
-		ID:         "test-id",
-		PowerState: "Running",
-		Addresses: map[string]string{
-			"0/ipv4/0": "192.168.1.100",
-			"0/ipv6/0": "fe80::1",
-		},
-	}
-
-	if vm.ID != "test-id" {
-		t.Errorf("ID mismatch: expected test-id, got %s", vm.ID)
-	}
-
-	if vm.PowerState != "Running" {
-		t.Errorf("PowerState mismatch: expected Running, got %s", vm.PowerState)
-	}
-
-	ipv4, ok := vm.Addresses["0/ipv4/0"]
-	if !ok || ipv4 != "192.168.1.100" {
-		t.Errorf("IPv4 address mismatch: expected 192.168.1.100, got %s", ipv4)
-	}
-}
-
-// RFB tests
 func TestCharToKeysym(t *testing.T) {
 	tests := []struct {
 		ch        rune
@@ -407,58 +366,6 @@ func TestIPv4Filtering(t *testing.T) {
 	}
 }
 
-// Wait for IP tests
-func TestExtractIPv4FromAddresses(t *testing.T) {
-	tests := []struct {
-		name      string
-		addresses map[string]string
-		expected  string
-	}{
-		{
-			"single IPv4 address",
-			map[string]string{"0/ipv4/0": "192.168.1.100"},
-			"192.168.1.100",
-		},
-		{
-			"multiple IPv4 addresses",
-			map[string]string{
-				"0/ipv4/0": "192.168.1.100",
-				"0/ipv4/1": "10.0.0.1",
-			},
-			"192.168.1.100",
-		},
-		{
-			"IPv4 and IPv6 mixed",
-			map[string]string{
-				"0/ipv4/0": "192.168.1.100",
-				"0/ipv6/0": "fe80::1",
-			},
-			"192.168.1.100",
-		},
-		{
-			"only IPv6",
-			map[string]string{
-				"0/ipv6/0": "fe80::1",
-			},
-			"",
-		},
-		{
-			"empty addresses",
-			map[string]string{},
-			"",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := extractIPv4(tt.addresses)
-			if result != tt.expected {
-				t.Errorf("expected %s, got %s", tt.expected, result)
-			}
-		})
-	}
-}
-
 func TestIPv4KeyPattern(t *testing.T) {
 	tests := []struct {
 		key     string
@@ -480,62 +387,5 @@ func TestIPv4KeyPattern(t *testing.T) {
 				t.Errorf("expected matches=%v, got %v", tt.matches, matches)
 			}
 		})
-	}
-}
-
-// Wait for shutdown tests
-func TestPowerStateDetection(t *testing.T) {
-	tests := []struct {
-		name       string
-		powerState string
-		isHalted   bool
-		isRunning  bool
-	}{
-		{"Running state", "Running", false, true},
-		{"Halted state", "Halted", true, false},
-		{"Unknown state", "Unknown", false, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			vm := &VM{
-				ID:         "test-vm",
-				PowerState: tt.powerState,
-			}
-
-			isHalted := vm.PowerState == "Halted"
-			isRunning := vm.PowerState == "Running"
-
-			if isHalted != tt.isHalted {
-				t.Errorf("isHalted: expected %v, got %v", tt.isHalted, isHalted)
-			}
-			if isRunning != tt.isRunning {
-				t.Errorf("isRunning: expected %v, got %v", tt.isRunning, isRunning)
-			}
-		})
-	}
-}
-
-func TestVMPowerStateField(t *testing.T) {
-	vm := &VM{
-		ID:         "test-id",
-		PowerState: "Halted",
-		Addresses: map[string]string{
-			"0/ipv4/0": "192.168.1.100",
-		},
-	}
-
-	if vm.PowerState != "Halted" {
-		t.Errorf("PowerState mismatch: expected Halted, got %s", vm.PowerState)
-	}
-
-	vm.PowerState = "Running"
-	if vm.PowerState != "Running" {
-		t.Errorf("PowerState mismatch after update: expected Running, got %s", vm.PowerState)
-	}
-
-	vm.PowerState = "Halted"
-	if vm.PowerState != "Halted" {
-		t.Errorf("PowerState mismatch after second update: expected Halted, got %s", vm.PowerState)
 	}
 }

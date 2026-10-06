@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
@@ -16,7 +17,7 @@ type StepBootVM struct{}
 func (s *StepBootVM) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 	config := state.Get("config").(*Config)
-	vmID := state.Get("vm_id").(string)
+	vmID := state.Get("vm_id").(uuid.UUID).String()
 
 	if len(config.BootCommand) == 0 {
 		ui.Say("No boot commands - skipping boot automation")

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gofrs/uuid"
+	"github.com/vatesfr/xenorchestra-go-sdk/pkg/payloads"
+
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
@@ -38,14 +41,14 @@ func (s *StepWaitForShutdown) Run(ctx context.Context, state multistep.StateBag)
 			ui.Error("Timeout waiting for VM to shutdown")
 			return multistep.ActionHalt
 		case <-ticker.C:
-			vm, err := client.GetVM(vmID.(string))
+			vm, err := client.VM().GetByID(ctx, vmID.(uuid.UUID))
 			if err != nil {
 				ui.Say(fmt.Sprintf("Error getting VM status: %v (retrying...)", err))
 				continue
 			}
 
 			// Check if VM is halted
-			if vm.PowerState == "Halted" {
+			if vm.PowerState == payloads.PowerStateHalted {
 				ui.Say("VM has shut down")
 				return multistep.ActionContinue
 			}
